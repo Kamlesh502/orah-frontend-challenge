@@ -21,12 +21,12 @@ export const ActivityPage: React.FC = () => {
       )}
       {loadState === "loaded" && (
         <S.Container>
-          {data?.activity
-            .slice(0)
-            .reverse()
-            .map((activity, index) => (
-              <ActivityListTile type={activity.type} entity={activity.entity} date={activity.date} />
-            ))}
+          {data?.activity && data?.activity.length > 0
+            ? data?.activity
+                .slice(0)
+                .reverse()
+                .map((activity, index) => <ActivityListTile type={activity.type} entity={activity.entity} date={activity.date} />)
+            : "No activity found!"}
         </S.Container>
       )}
     </>
