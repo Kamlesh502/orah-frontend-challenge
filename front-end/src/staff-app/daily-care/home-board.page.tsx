@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react"
+import React, { useState, useEffect, useContext } from "react"
 import styled from "styled-components"
 import Button from "@material-ui/core/ButtonBase"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
@@ -10,21 +10,34 @@ import { Person } from "shared/models/person"
 import { useApi } from "shared/hooks/use-api"
 import { StudentListTile } from "staff-app/components/student-list-tile/student-list-tile.component"
 import { ActiveRollOverlay, ActiveRollAction } from "staff-app/components/active-roll-overlay/active-roll-overlay.component"
+import { DailyCareContext, DailyCareContextType } from "staff-app/context/dailyCareContext"
 
 export const HomeBoardPage: React.FC = () => {
   const [isRollMode, setIsRollMode] = useState(false)
   const [getStudents, data, loadState] = useApi<{ students: Person[] }>({ url: "get-homeboard-students" })
+  const [saveRolls] = useApi<{}>({ url: "save-roll" })
   const [firstNameSortType, setFirstNameSortType] = useState("asc")
   const [lastNameSortType, setLastNameSortType] = useState("asc")
   const [inputStudent, setInputStudent] = useState("")
   const [filterStudentMode, setFilterStudentMode] = useState(false)
-  const [filteredStudentData, setFilteredStudentData] = useState<Person[] | undefined>([])
+  const [filteredStudentData, setFilteredStudentData] = useState<Person[]>([])
+  const { saveStudent, filterStudent, filteredArray } = React.useContext(DailyCareContext) as DailyCareContextType
   useEffect(() => {
     void getStudents()
     setInputStudent("")
     setFilterStudentMode(false)
-  }, [getStudents])
+  }, [getStudents, isRollMode])
 
+  useEffect(() => {
+    const arr = data?.students.map((s) => {
+      const person: Person = {
+        ...s,
+        rollStates: "unmark",
+      }
+      return person
+    })
+    arr && saveStudent(arr)
+  }, [loadState])
   const onToolbarAction = (action: ToolbarAction) => {
     if (action === "roll") {
       setIsRollMode(true)
@@ -54,13 +67,32 @@ export const HomeBoardPage: React.FC = () => {
       const filteredStudent = data?.students.filter(
         (student) => student.first_name.toLowerCase().includes(inputStudent.toLowerCase()) || student.last_name.toLowerCase().includes(inputStudent.toLowerCase())
       )
-      setFilteredStudentData(filteredStudent)
+      filteredStudent && setFilteredStudentData(filteredStudent)
     }
   }
 
-  const onActiveRollAction = (action: ActiveRollAction) => {
+  const onActiveRollAction = (action: ActiveRollAction, value?: string) => {
+    setFilterStudentMode(true)
     if (action === "exit") {
       setIsRollMode(false)
+    }
+    if (action === "complete") {
+      const rollStateArray = filteredArray.map((e) => {
+        return {
+          student_id: e.id,
+          roll_state: e.rollStates,
+        }
+      })
+      const rollInp = {
+        student_roll_states: rollStateArray,
+      }
+
+      void saveRolls(rollInp)
+      setIsRollMode(false)
+    }
+    if (action === "filter") {
+      const arr = value && filterStudent(value)
+      arr && setFilteredStudentData(arr)
     }
   }
 
@@ -110,7 +142,7 @@ const Toolbar: React.FC<ToolbarProps> = (props) => {
       <div onClick={() => onItemClick("sort_last_name")} style={{ cursor: "pointer" }}>
         Last Name <FontAwesomeIcon icon={faSort} />
       </div>
-      <div>
+      <div className="toolbar__search">
         <input
           onChange={(e) => setInputStudent(e.target.value)}
           onKeyPress={(e) => {
@@ -150,6 +182,15 @@ const S = {
     padding: 6px 14px;
     font-weight: ${FontWeight.strong};
     border-radius: ${BorderRadius.default};
+    .toolbar__search input {
+      border: 1px solid grey;
+      border-radius: ${BorderRadius.default};
+      margin-right: 10px;
+    }
+    .toolbar__search button {
+      border: 1px solid grey;
+      border-radius: ${BorderRadius.default};
+    }
   `,
   Button: styled(Button)`
     && {

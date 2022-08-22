@@ -1,10 +1,9 @@
-import { useReducer, useCallback } from "react"
+import { useReducer, useCallback, useContext } from "react"
 import { ApiResponse, ResponseError } from "shared/interfaces/http.interface"
 import { RollInput } from "shared/models/roll"
 import { getHomeboardStudents } from "api/get-homeboard-students"
 import { getActivities } from "api/get-activities"
 import { saveActiveRoll } from "api/save-active-roll"
-
 interface Options {
   url: Endpoint
   initialLoadState?: LoadState

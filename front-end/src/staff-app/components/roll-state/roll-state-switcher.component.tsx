@@ -1,15 +1,21 @@
-import React, { useState } from "react"
+import React, { useEffect, useState } from "react"
 import { RolllStateType } from "shared/models/roll"
 import { RollStateIcon } from "staff-app/components/roll-state/roll-state-icon.component"
+import { Person } from "shared/models/person"
+import { DailyCareContext, DailyCareContextType } from "staff-app/context/dailyCareContext"
 
 interface Props {
   initialState?: RolllStateType
   size?: number
   onStateChange?: (newState: RolllStateType) => void
+  student: Person
 }
-export const RollStateSwitcher: React.FC<Props> = ({ initialState = "unmark", size = 40, onStateChange }) => {
+export const RollStateSwitcher: React.FC<Props> = ({ initialState = "unmark", size = 40, onStateChange, student }) => {
   const [rollState, setRollState] = useState(initialState)
-
+  useEffect(() => {
+    setRollState(student.rollStates)
+  }, [student])
+  const { updateStudent } = React.useContext(DailyCareContext) as DailyCareContextType
   const nextState = () => {
     const states: RolllStateType[] = ["present", "late", "absent"]
     if (rollState === "unmark" || rollState === "absent") return states[0]
@@ -23,6 +29,7 @@ export const RollStateSwitcher: React.FC<Props> = ({ initialState = "unmark", si
     if (onStateChange) {
       onStateChange(next)
     }
+    updateStudent(next, student)
   }
 
   return <RollStateIcon type={rollState} size={size} onClick={onClick} />
